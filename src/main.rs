@@ -3,16 +3,21 @@ use std::ops::Add;
 use std::ops::Sub;
 use std::ops::SubAssign;
 use std::io::{self, Read};
+use std::cmp::Ordering;
 
 const ALPHABET: [char; 26] = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
                               'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 struct Occurrences {
     alphabet: [i32; 26],
 }
 
 impl Occurrences {
+    fn null() -> Occurrences {
+        Occurrences { alphabet: [0; 26] }
+    }
+
     fn from_string(s: &str) -> Occurrences {
         let mut occ = [0; 26];
         for (i, &a) in ALPHABET.iter().enumerate() {
@@ -20,26 +25,35 @@ impl Occurrences {
         }
         Occurrences { alphabet: occ }
     }
+}
 
-    fn is_null(&self) -> bool {
-        self.sum() == 0
-    }
-
-    fn is_nonnegative(&self) -> bool {
-        for &x in self.alphabet.iter() {
-            if x < 0 {
-                return false;
+/* Définition d'un ordre partiel pour les Occurrences de lettres de mots
+De la même manière que l'inclusion d'ensembles.
+Un mot X est strictement inclus dans un autre Y si
+    on peut écrire X avec les lettres de Y mais pas inversement.
+Cet ordre est partiel car (A n'est pas strictement
+    inclus dans B) n'implique pas que (B est strictement inclus dans A)
+*/
+impl PartialOrd for Occurrences {
+    fn partial_cmp(&self, other: &Occurrences) -> Option<Ordering> {
+        let mut exists_less = false;
+        let mut exists_greater = false;
+        for i in 0..self.alphabet.len() {
+            match self.alphabet[i].cmp(&other.alphabet[i]) {
+                Ordering::Equal => (),
+                Ordering::Less => exists_less = true,
+                Ordering::Greater => exists_greater = true,
             }
         }
-        true
-    }
-
-    fn sum(&self) -> i32 {
-        let mut s = 0;
-        for &o in self.alphabet.iter() {
-            s += o;
+        if exists_less && !exists_greater {
+            Some(Ordering::Less)
+        } else if exists_greater && !exists_less {
+            Some(Ordering::Greater)
+        } else if !exists_less && !exists_greater {
+            Some(Ordering::Equal)
+        } else {
+            None
         }
-        s
     }
 }
 
@@ -85,28 +99,25 @@ fn main() {
     for lang_word in language {
         let lang_word_occ = Occurrences::from_string(&lang_word);
 
-        assert!(!lang_word_occ.is_null(),
+        assert!(lang_word_occ > Occurrences::null(),
                 format!("\"{}\" contains no letters : {:?}",
                         lang_word,
                         lang_word_occ));
 
-        if !(word_occ - lang_word_occ).is_nonnegative() {
+        if !(lang_word_occ <= word_occ) {
             continue;
         }
 
         let mut new_solutions = Vec::new();
 
         for &(mut remaining_occ, ref words) in incomplete_solutions.iter() {
-            remaining_occ -= lang_word_occ;
-            let mut n = 1;
+            let mut new_words = words.clone();
 
-            while remaining_occ.is_nonnegative() {
-                let mut new_words = words.clone();
-                new_words.append(&mut vec![lang_word.to_string(); n]);
-                new_solutions.push((remaining_occ, new_words));
-
+            while lang_word_occ <= remaining_occ {
                 remaining_occ -= lang_word_occ;
-                n += 1;
+                new_words.push(lang_word.clone());
+
+                new_solutions.push((remaining_occ, new_words.clone()));
             }
         }
 
@@ -114,7 +125,7 @@ fn main() {
     }
 
     for (remaining_occ, words) in incomplete_solutions {
-        if remaining_occ.is_null() {
+        if remaining_occ == Occurrences::null() {
             println!("{}", words.join(" "));
         }
     }
