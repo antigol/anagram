@@ -8,17 +8,17 @@ const ALPHABET: [char; 26] = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 
                               'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
 
 #[derive(Debug, Clone, Copy)]
-struct Occurences {
+struct Occurrences {
     alphabet: [i32; 26],
 }
 
-impl Occurences {
-    fn from_string(s: &str) -> Occurences {
+impl Occurrences {
+    fn from_string(s: &str) -> Occurrences {
         let mut occ = [0; 26];
         for (i, &a) in ALPHABET.iter().enumerate() {
             occ[i] = s.chars().filter(|&ch| ch == a).count() as i32;
         }
-        Occurences { alphabet: occ }
+        Occurrences { alphabet: occ }
     }
 
     fn is_null(&self) -> bool {
@@ -43,27 +43,27 @@ impl Occurences {
     }
 }
 
-impl Add for Occurences {
-    type Output = Occurences;
-    fn add(self, other: Occurences) -> Occurences {
+impl Add for Occurrences {
+    type Output = Occurrences;
+    fn add(self, other: Occurrences) -> Occurrences {
         let mut occ = self.alphabet.clone();
         for (i, &x) in other.alphabet.iter().enumerate() {
             occ[i] += x;
         }
-        Occurences { alphabet: occ }
+        Occurrences { alphabet: occ }
     }
 }
 
-impl Sub for Occurences {
-    type Output = Occurences;
-    fn sub(mut self, other: Occurences) -> Occurences {
+impl Sub for Occurrences {
+    type Output = Occurrences;
+    fn sub(mut self, other: Occurrences) -> Occurrences {
         self -= other;
         self
     }
 }
 
-impl SubAssign for Occurences {
-    fn sub_assign(&mut self, other: Occurences) {
+impl SubAssign for Occurrences {
+    fn sub_assign(&mut self, other: Occurrences) {
         for (i, &x) in other.alphabet.iter().enumerate() {
             self.alphabet[i] -= x;
         }
@@ -78,12 +78,12 @@ fn main() {
 
     let language = language.split('\n').filter(|x| !x.is_empty()).map(|x| x.to_uppercase());
 
-    let word_occ = Occurences::from_string(&word);
+    let word_occ = Occurrences::from_string(&word);
 
-    let mut incomplete_solutions: Vec<(Occurences, Vec<String>)> = vec![(word_occ, Vec::new())];
+    let mut incomplete_solutions: Vec<(Occurrences, Vec<String>)> = vec![(word_occ, Vec::new())];
 
     for lang_word in language {
-        let lang_word_occ = Occurences::from_string(&lang_word);
+        let lang_word_occ = Occurrences::from_string(&lang_word);
 
         assert!(!lang_word_occ.is_null(),
                 format!("\"{}\" contains no letters : {:?}",
